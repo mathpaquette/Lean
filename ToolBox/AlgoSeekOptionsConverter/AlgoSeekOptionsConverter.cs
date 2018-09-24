@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  * 
@@ -67,7 +67,8 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
         /// <summary>
         /// Give the reference date and source directory, convert the algoseek options data into n-resolutions LEAN format.
         /// </summary>
-        public void Convert()
+        /// <param name="symbolFilter">HashSet of symbols as string to process. *Only used for testing*</param>
+        public void Convert(HashSet<string> symbolFilter = null)
         {
             //Get the list of all the files, then for each file open a separate streamer.
             var compressedRawDatafiles = Directory.EnumerateFiles(_remote, _remoteMask).Select(f => new FileInfo(f)).ToList();
@@ -108,7 +109,7 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
                 rawDatafiles.Add(rawDataFile);
             }
 
-
+            var flushInterval = 0;
             //Process each file massively in parallel.
             Parallel.ForEach(rawDatafiles, parallelOptionsProcessing, rawDataFile =>
             {
@@ -123,13 +124,13 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
                 // var symbolFilter = symbolFilterNames.SelectMany(name => new[] { name, name + "1", name + ".1" }).ToHashSet();
                 // var reader = new AlgoSeekOptionsReader(csvFile, _referenceDate, symbolFilter);
 
-                var reader = new ToolBox.AlgoSeekOptionsConverter.AlgoSeekOptionsReader(rawDataFile.FullName, _referenceDate);
+                var reader = new ToolBox.AlgoSeekOptionsConverter.AlgoSeekOptionsReader(rawDataFile.FullName, _referenceDate, symbolFilter);
                 if (start == DateTime.MinValue)
                 {
                     start = DateTime.Now;
                 }
 
-                var flushStep = TimeSpan.FromMinutes(15 + random.NextDouble() * 5);
+                var flushStep = TimeSpan.FromMinutes(15 + 2 * Interlocked.Increment(ref flushInterval));
 
                 if (reader.Current != null) // reader contains the data
                 {
