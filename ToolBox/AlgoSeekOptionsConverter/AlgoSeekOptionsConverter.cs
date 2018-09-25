@@ -14,7 +14,6 @@
 */
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -83,13 +82,12 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
             var start = DateTime.MinValue;
 
             var random = new Random((int)DateTime.Now.Ticks);
-
+            var counter = 1;
             foreach (var compressedRawDatafile in compressedRawDatafiles)
             {
                 var timer = DateTime.UtcNow;
                 var rawDataFile = new FileInfo(Path.Combine(_source, compressedRawDatafile.Name.Replace(".bz2", "")));
                 var decompressSuccessful = false;
-                var counter = 1;
                 do
                 {
                     var attempt = counter == 1 ? string.Empty : $" attempt {counter} of 3";
@@ -109,7 +107,7 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
                 rawDatafiles.Add(rawDataFile);
             }
 
-            var flushInterval = 0;
+            counter = 0;
             //Process each file massively in parallel.
             Parallel.ForEach(rawDatafiles, parallelOptionsProcessing, rawDataFile =>
             {
@@ -130,7 +128,9 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
                     start = DateTime.Now;
                 }
 
-                var flushStep = TimeSpan.FromMinutes(15 + 2 * Interlocked.Increment(ref flushInterval));
+                var flushStepInterval = 10 +
+                    (Interlocked.Increment(ref counter) % 6) - 3;
+                var flushStep = TimeSpan.FromMinutes(flushStepInterval);
 
                 if (reader.Current != null) // reader contains the data
                 {
@@ -176,6 +176,7 @@ namespace QuantConnect.ToolBox.AlgoSeekOptionsConverter
                     Flush(processors, DateTime.MaxValue, true);
                     WriteToDisk(processors, waitForFlush, DateTime.MaxValue, flushStep, true);
 
+                    reader.Dispose();
                     Log.Trace("AlgoSeekOptionsConverter.Convert(): Cleaning up extracted options file {0}", rawDataFile.FullName);
                     rawDataFile.Delete();
                 }
