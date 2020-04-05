@@ -51,7 +51,7 @@ namespace QuantConnect.ToolBox.IQFeed
         private const string NewLine = "\r\n";
         private const char Tabulation = '\t';
 
-        private IDataCacheProvider _dataCacheProvider = new ZipDataCacheProvider(new DefaultDataProvider(), isDataEphemeral:true);
+        private IDataCacheProvider _dataCacheProvider = new ZipDataCacheProvider(new DefaultDataProvider(), isDataEphemeral: true);
 
         // Database of all symbols
         // We store symbol data in memory by default (e.g. Equity, FX),
@@ -98,7 +98,8 @@ namespace QuantConnect.ToolBox.IQFeed
         /// <returns>IQFeed ticker</returns>
         public string GetBrokerageSymbol(Symbol symbol)
         {
-            return _symbols.ContainsKey(symbol) ? _symbols[symbol] : string.Empty;
+            string leanSymbol;
+            return _symbols.TryGetValue(symbol, out leanSymbol) ? leanSymbol : string.Empty;
         }
 
         /// <summary>
@@ -304,7 +305,7 @@ namespace QuantConnect.ToolBox.IQFeed
 
                 var columns = line.Split(Tabulation);
 
-                if (columns[columnSymbol] == "TST$Y") continue;
+                if (columns[columnSymbol] == "TST$Y") continue; // skip test symbol
 
                 if (columns.Length != totalColumns)
                 {
@@ -374,7 +375,7 @@ namespace QuantConnect.ToolBox.IQFeed
                     case "FUTURE":
 
                         // we are not interested in designated continuous contracts
-                        if (columns[columnSymbol].EndsWith("#"))
+                        if (columns[columnSymbol].EndsWith("#") || columns[columnSymbol].EndsWith("#C"))
                             continue;
 
                         var futuresTicker = columns[columnSymbol].TrimStart(new[] { '@' });

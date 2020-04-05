@@ -13,8 +13,8 @@ namespace QuantConnect.ToolBox.IQFeedDownloader
     /// </summary>
     public class IQFeedDataDownloader : IDataDownloader
     {
-        private readonly IQConnect _iqConnect;
-        private readonly HistoryPort _historyPort;
+        // private readonly HistoryPort _historyPort;
+        private readonly IQFeedHistoryProvider _historyProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IQFeedDataDownloader"/> class
@@ -23,14 +23,9 @@ namespace QuantConnect.ToolBox.IQFeedDownloader
         /// <param name="password">IQFeed password</param>
         /// <param name="productName">IQFeed product name</param>
         /// <param name="productVersion">IQFeed product version</param>
-        public IQFeedDataDownloader(string userName, string password, string productName, string productVersion)
+        public IQFeedDataDownloader(IQFeedHistoryProvider historyProvider)
         {
-            _iqConnect = new IQConnect(productName, productVersion);
-            _iqConnect.Launch(new IQCredentials(userName, password, true, true));
-
-            _historyPort = new HistoryPort(new IQFeedDataQueueUniverseProvider(), 0, 0);
-            _historyPort.Connect();
-            _historyPort.SetClientName("History");
+            _historyProvider = historyProvider;
         }
 
         /// <summary>
@@ -52,7 +47,7 @@ namespace QuantConnect.ToolBox.IQFeedDownloader
             var dataType = resolution == Resolution.Tick ? typeof(Tick) : typeof(TradeBar);
             var tickType = resolution == Resolution.Tick ? TickType.Quote : TickType.Trade;
 
-            var slices = _historyPort.ProcessHistoryRequests(
+            var slices = _historyProvider.ProcessHistoryRequests(
                 new HistoryRequest(
                     startUtc,
                     endUtc,
@@ -65,28 +60,23 @@ namespace QuantConnect.ToolBox.IQFeedDownloader
                     true,
                     false,
                     DataNormalizationMode.Adjusted,
-                    tickType)).ToList();
+                    tickType));
 
             switch (resolution)
             {
                 case Resolution.Tick:
-                    var ticks = new List<Tick>();
                     foreach (var slice in slices)
-                    {
-                        ticks.AddRange(slice.Ticks[symbol]);
-                    }
-                    return ticks;
+                        foreach (var tick in slice.Ticks[symbol])
+                            yield return tick;
+                    break;
 
                 case Resolution.Second:
                 case Resolution.Minute:
                 case Resolution.Hour:
                 case Resolution.Daily:
-                    var tradeBars = new List<TradeBar>();
                     foreach (var slice in slices)
-                    {
-                        tradeBars.Add(slice.Bars[symbol]);
-                    }
-                    return tradeBars;
+                        yield return slice.Bars[symbol];
+                    break;
 
                 default:
                     throw new NotSupportedException("Resolution not available: " + resolution);
