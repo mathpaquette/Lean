@@ -62,12 +62,6 @@ namespace QuantConnect.ToolBox.IQFeed
         #endregion
     }
 
-
-
-
-
-
-
     public enum PortType { Level1 = 1, Lookup = 3, Level2 = 2, Admin = 0 }
     public static class IQSocket
     {
@@ -188,8 +182,5 @@ namespace QuantConnect.ToolBox.IQFeed
         private CultureInfo _enUS = new CultureInfo("en-US");
         #endregion
     }
- 
-
-
 }
  
