@@ -182,6 +182,7 @@ namespace QuantConnect.ToolBox.IQFeed
             var securityType = symbol.ID.SecurityType;
             return
                 (securityType == SecurityType.Equity && market == Market.USA) ||
+                (securityType == SecurityType.Equity && market == Market.CANADA) ||
                 (securityType == SecurityType.Forex && market == Market.FXCM) ||
                 (securityType == SecurityType.Option && market == Market.USA) ||
                 (securityType == SecurityType.Future);

@@ -320,13 +320,14 @@ namespace QuantConnect.ToolBox.IQFeed
                 {
                     case "INDEX":
                     case "EQUITY":
+                        var equityMarket = columns[columnListedMarket] == "TSE" ? Market.CANADA : Market.USA;
 
                         // we load equities/indices in memory
                         symbolUniverse.Add(new SymbolData
                         {
-                            Symbol = Symbol.Create(columns[columnSymbol], SecurityType.Equity, Market.USA),
+                            Symbol = Symbol.Create(columns[columnSymbol], SecurityType.Equity, equityMarket),
                             SecurityCurrency = Currencies.USD,
-                            SecurityExchange = Market.USA,
+                            SecurityExchange = equityMarket,
                             Ticker = columns[columnSymbol]
                         });
                         break;

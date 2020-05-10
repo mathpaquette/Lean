@@ -58,6 +58,7 @@ namespace QuantConnect
             
             Tuple.Create(COMEX, 22),
             Tuple.Create(CME, 23),
+            Tuple.Create(CANADA, 24),
         };
 
         static Market()
@@ -74,6 +75,11 @@ namespace QuantConnect
         /// USA Market
         /// </summary>
         public const string USA = "usa";
+
+        /// <summary>
+        /// USA Market
+        /// </summary>
+        public const string CANADA = "canada";
 
         /// <summary>
         /// Oanda Market

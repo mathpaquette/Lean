@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using IQFeed.CSharpApiClient;
@@ -62,11 +63,26 @@ namespace QuantConnect.ToolBox.IQFeedDownloader
                 var productVersion = Config.Get("iqfeed-version", "productversion");
 
                 // Create an instance of the downloader
-                const string market = Market.USA;
+                var market = Market.USA;
 
                 // Connect to IQFeed
                 IQFeedLauncher.Start(userName, password, productName, productVersion);
                 var lookupClient = LookupClientFactory.CreateNew(NumberOfClients);
+
+                switch (tickers.First())
+                {
+                    case "CANADIAN_STOCKS":
+                        market = Market.CANADA;
+                        tickers = lookupClient.Symbol.GetAllMarketSymbols().Where(x => x.SecurityType == "EQUITY" && x.ListedMarket == "TSE")
+                            .Select(x => x.Symbol).ToList();
+                        break;
+
+                    case "US_STOCKS":
+                        tickers = lookupClient.Symbol.GetAllMarketSymbols().Where(x => x.SecurityType == "EQUITY" && new [] { "NYSE", "NASDAQ", "NYSE_AMERICAN", "BATS", "IEX" }.Contains(x.Exchange))
+                            .Select(x => x.Symbol).ToList();
+                        break;
+                }
+
                 lookupClient.Connect();
 
                 // Create IQFeed downloader instance
